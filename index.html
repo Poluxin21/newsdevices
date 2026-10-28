@@ -1,0 +1,520 @@
+<meta charset="UTF-8">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>NewsDevices</title>
+<style>
+/* layout concept: a diagnostic/workshop console — hero reads like a scan terminal,
+   service cards read like spec sheets, bridging ECU tuning and software with one visual language */
+:root{
+  --bg:#12141a; --bg-raised:#1b1e26; --bg-raised-2:#20232d;
+  --fg:#f2f0ec; --fg-muted:#9a9ca6; --fg-faint:#5e606a;
+  --accent:#ff7a28; --accent-strong:#ffa05c; --accent-dim:#7a4420;
+  --line:rgba(255,255,255,0.1); --line-strong:rgba(255,255,255,0.18);
+  --good:#5fd97a;
+  --font-display:'Rajdhani',sans-serif; --font-body:'IBM Plex Sans',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f5f3ee; --bg-raised:#ffffff; --bg-raised-2:#edeae2;
+    --fg:#17181c; --fg-muted:#5b5d66; --fg-faint:#8a8c94;
+    --accent:#d9530e; --accent-strong:#b8450b; --accent-dim:#f3c9a8;
+    --line:rgba(0,0,0,0.1); --line-strong:rgba(0,0,0,0.18);
+    --good:#1f8a45;
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f5f3ee; --bg-raised:#ffffff; --bg-raised-2:#edeae2;
+  --fg:#17181c; --fg-muted:#5b5d66; --fg-faint:#8a8c94;
+  --accent:#d9530e; --accent-strong:#b8450b; --accent-dim:#f3c9a8;
+  --line:rgba(0,0,0,0.1); --line-strong:rgba(0,0,0,0.18);
+  --good:#1f8a45;
+  color-scheme:light;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--font-body);
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;}
+a{color:inherit;}
+h1,h2,h3{font-family:var(--font-display); font-weight:700; letter-spacing:0.01em; margin:0; text-wrap:balance;}
+.mono{font-family:var(--font-mono);}
+.wrap{max-width:1120px; margin:0 auto;}
+.visually-hidden{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:4px;}
+
+/* ---------- nav ---------- */
+.nav{
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:30;
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:31;background:var(--bg);}
+.nav-inner{
+  max-width:1120px; margin:0 auto; display:flex; align-items:center; gap:20px;
+  padding-block:14px;
+}
+.brand{
+  font-family:var(--font-display); font-weight:700; font-size:1.25rem; text-decoration:none;
+  letter-spacing:0.02em;
+}
+.brand-dot{color:var(--accent);}
+.nav-links{display:flex; gap:28px; margin-inline:auto; font-size:0.95rem;}
+.nav-links a{text-decoration:none; color:var(--fg-muted); transition:color .15s;}
+.nav-links a:hover{color:var(--fg);}
+.nav-toggle{
+  display:none; width:38px; height:38px; border-radius:8px; border:1px solid var(--line);
+  background:transparent; position:relative; cursor:pointer;
+}
+.nav-toggle span, .nav-toggle span::before, .nav-toggle span::after{
+  content:""; position:absolute; left:9px; right:9px; height:2px; background:var(--fg); transition:transform .2s, opacity .2s;
+}
+.nav-toggle span{top:18px;}
+.nav-toggle span::before{content:""; top:-6px;}
+.nav-toggle span::after{content:""; top:6px;}
+
+.btn{
+  display:inline-flex; align-items:center; gap:8px; font-family:var(--font-body); font-weight:600;
+  font-size:0.92rem; padding:11px 20px; border-radius:7px; text-decoration:none; border:1px solid transparent;
+  transition:transform .12s, background .15s, border-color .15s; cursor:pointer; white-space:nowrap;
+}
+.btn:active{transform:translateY(1px);}
+.btn-accent{background:var(--accent); color:#17110a;}
+.btn-accent:hover{background:var(--accent-strong);}
+.btn-ghost{background:transparent; color:var(--fg); border-color:var(--line-strong);}
+.btn-ghost:hover{border-color:var(--accent); color:var(--accent-strong);}
+.btn-block{width:100%; justify-content:center;}
+
+/* ---------- hero ---------- */
+.hero{
+  display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px; align-items:center;
+  padding-block:72px 56px; max-width:1120px; margin:0 auto;
+}
+.eyebrow{
+  font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.12em; font-size:0.78rem;
+  color:var(--accent); margin:0 0 14px;
+}
+.hero h1{font-size:clamp(2.1rem, 4.4vw, 3.4rem); line-height:1.08;}
+.hero-sub{color:var(--fg-muted); font-size:1.05rem; max-width:46ch; margin:18px 0 28px;}
+.hero-actions{display:flex; gap:14px; flex-wrap:wrap;}
+
+.hero-panel{
+  background:var(--bg-raised); border:1px solid var(--line); border-radius:10px; overflow:hidden;
+  box-shadow:0 20px 60px -30px rgba(0,0,0,0.6);
+}
+.panel-head{
+  display:flex; align-items:center; gap:7px; padding:10px 14px; border-bottom:1px solid var(--line);
+  background:var(--bg-raised-2);
+}
+.panel-head .dot{width:9px; height:9px; border-radius:50%; background:var(--fg-faint);}
+.panel-title{margin-left:8px; font-family:var(--font-mono); font-size:0.78rem; color:var(--fg-faint);}
+.panel-body{padding:26px 20px; min-height:220px; display:flex; flex-direction:column; justify-content:center; gap:10px;}
+.scan-row{font-family:var(--font-mono); font-size:0.95rem; color:var(--fg-faint); display:flex; gap:10px;}
+.scan-row .arrow{color:var(--accent);}
+.scan-active{color:var(--fg); font-size:1.02rem;}
+.scan-active .niche{color:var(--accent-strong); font-weight:600;}
+.cursor{display:inline-block; width:8px; background:var(--accent); margin-left:4px; animation:blink 1s steps(2) infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+/* ---------- sections ---------- */
+section{padding-block:64px;}
+.section-head{max-width:640px; margin:0 auto 40px;}
+.section-head .eyebrow{margin-bottom:10px;}
+.section-head h2{font-size:clamp(1.7rem,3vw,2.3rem);}
+.section-head p{color:var(--fg-muted); margin:12px 0 0;}
+
+#servicos{border-top:1px solid var(--line);}
+.service-grid{
+  max-width:1120px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:20px;
+}
+.card{
+  background:var(--bg-raised); border:1px solid var(--line); border-radius:10px; padding:26px;
+  display:flex; flex-direction:column; gap:14px; min-width:0;
+}
+.card-icon{
+  width:42px; height:42px; border-radius:8px; background:var(--accent-dim); color:var(--accent-strong);
+  display:flex; align-items:center; justify-content:center; flex:none;
+}
+.card h3{font-size:1.2rem;}
+.card .spec{
+  font-family:var(--font-mono); font-size:0.76rem; letter-spacing:0.04em; color:var(--fg-faint);
+  text-transform:uppercase;
+}
+.card p.desc{color:var(--fg-muted); font-size:0.94rem; margin:0;}
+.card ul{margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px;}
+.card li{font-size:0.9rem; color:var(--fg-muted); display:flex; gap:9px; align-items:flex-start;}
+.card li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);margin-top:7px;flex:none;}
+.card-cta{margin-top:auto; font-size:0.88rem; font-weight:600; color:var(--accent-strong); text-decoration:none; display:inline-flex; align-items:center; gap:6px;}
+.card-cta:hover{color:var(--accent);}
+.card.alt{border-style:dashed; justify-content:center; text-align:left;}
+
+#processo{border-top:1px solid var(--line); background:var(--bg-raised);}
+.steps{
+  max-width:1120px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:24px;
+}
+.step{display:flex; flex-direction:column; gap:10px;}
+.step .num{font-family:var(--font-mono); color:var(--accent); font-size:0.85rem;}
+.step h3{font-size:1.08rem;}
+.step p{color:var(--fg-muted); font-size:0.92rem; margin:0;}
+
+#diferenciais{border-top:1px solid var(--line);}
+.diff-grid{max-width:1120px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:22px;}
+.diff{display:flex; gap:14px; align-items:flex-start;}
+.diff-icon{width:34px;height:34px;flex:none;border-radius:50%;background:var(--accent-dim);color:var(--accent-strong);display:flex;align-items:center;justify-content:center;}
+.diff h3{font-size:1rem; margin-bottom:4px;}
+.diff p{margin:0; color:var(--fg-muted); font-size:0.9rem;}
+
+#contato{border-top:1px solid var(--line); background:var(--bg-raised);}
+.contact-grid{max-width:1120px; margin:0 auto; display:grid; grid-template-columns:0.9fr 1.1fr; gap:48px;}
+.contact-info h2{font-size:clamp(1.6rem,3vw,2.1rem); margin-bottom:14px;}
+.contact-info p{color:var(--fg-muted); max-width:38ch;}
+.wa-line{
+  margin-top:24px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  font-family:var(--font-mono); font-size:1rem; background:var(--bg-raised-2); border:1px solid var(--line);
+  border-radius:8px; padding:12px 14px;
+}
+.copy-btn{
+  border:1px solid var(--line-strong); background:transparent; color:var(--fg-muted); font-size:0.78rem;
+  padding:6px 10px; border-radius:6px; cursor:pointer; font-family:var(--font-body); white-space:nowrap;
+}
+.copy-btn:hover{color:var(--fg); border-color:var(--accent);}
+.form{
+  background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:28px; display:flex; flex-direction:column; gap:16px;
+}
+.field{display:flex; flex-direction:column; gap:6px;}
+.field label{font-size:0.82rem; color:var(--fg-muted);}
+.field input, .field select, .field textarea{
+  background:var(--bg-raised-2); border:1px solid var(--line); border-radius:7px; color:var(--fg);
+  padding:11px 12px; font-family:var(--font-body); font-size:0.95rem; resize:vertical; min-width:0; width:100%;
+}
+.hero > *, .contact-grid > *, .service-grid > *, .steps > *, .diff-grid > *, .form, .field{min-width:0;}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--accent);}
+.form-note{font-size:0.78rem; color:var(--fg-faint); margin:0;}
+
+footer{border-top:1px solid var(--line); padding-block:32px 48px;}
+.footer-inner{max-width:1120px; margin:0 auto; display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; align-items:center;}
+.footer-inner p{margin:0; color:var(--fg-faint); font-size:0.85rem;}
+
+.wa-float{
+  position:fixed; right:max(20px, calc(20px + env(safe-area-inset-right,0px))); bottom:max(20px, calc(20px + env(safe-area-inset-bottom,0px)));
+  width:56px; height:56px; border-radius:50%; background:var(--accent); color:#17110a; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,0.5); text-decoration:none; z-index:20;
+}
+.wa-float:hover{background:var(--accent-strong);}
+
+@media (max-width: 860px){
+  .hero{grid-template-columns:1fr; padding-block:48px 40px;}
+  .contact-grid{grid-template-columns:1fr;}
+  .nav-links{display:none;}
+  .nav-cta{display:none;}
+  .nav-toggle{display:block;}
+  .nav.open .nav-links{
+    display:flex; position:absolute; top:100%; left:0; right:0; flex-direction:column; gap:0;
+    background:var(--bg); border-bottom:1px solid var(--line); padding:8px max(16px, env(safe-area-inset-left,0px)) 16px;
+  }
+  .nav.open .nav-links a{padding:12px 0; border-bottom:1px solid var(--line);}
+}
+@media (prefers-reduced-motion: reduce){
+  .cursor{animation:none;}
+  *{transition:none !important;}
+}
+</style>
+
+<header class="nav" id="navHeader">
+  <div class="nav-inner">
+    <a class="brand" href="#top">NewsDevices<span class="brand-dot">.</span></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#servicos">Serviços</a>
+      <a href="#processo">Como funciona</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <a class="btn btn-accent nav-cta" data-wa-msg="Olá! Vim pelo site e quero um orçamento." href="#">WhatsApp</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menu" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<section class="hero" id="top">
+  <div>
+    <p class="eyebrow">Estúdio de desenvolvimento multissetorial</p>
+    <h1>Código e potência, sob o mesmo capô.</h1>
+    <p class="hero-sub">A NewsDevices projeta e constrói software sob medida — de remapeamento de ECU a sistemas web, aplicativos desktop e apps mobile. Um fornecedor só para qualquer projeto que envolva lógica, dado ou motor.</p>
+    <div class="hero-actions">
+      <a class="btn btn-accent" data-wa-msg="Olá! Vim pelo site e quero pedir um orçamento." href="#">Pedir orçamento</a>
+      <a class="btn btn-ghost" href="#servicos">Ver serviços</a>
+    </div>
+  </div>
+  <div class="hero-panel" aria-hidden="true">
+    <div class="panel-head"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="panel-title">scan.log</span></div>
+    <div class="panel-body">
+      <p class="scan-row"><span class="arrow">&gt;</span> varrendo nichos disponíveis...</p>
+      <p class="scan-row scan-active"><span class="arrow">&gt;</span><span class="niche" id="scanNiche">AUTOMOTIVO</span><span id="scanSpec">STAGE 2 · +52cv</span><span class="cursor"></span></p>
+    </div>
+  </div>
+</section>
+
+<section id="servicos">
+  <div class="section-head wrap">
+    <p class="eyebrow">Serviços</p>
+    <h2>Um nicho, um problema, uma solução sob medida.</h2>
+    <p>Cada área abaixo tem seu próprio vocabulário técnico — a gente fala todos.</p>
+  </div>
+  <div class="service-grid">
+
+    <div class="card">
+      <div class="card-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="17" r="2.5"/><circle cx="17" cy="17" r="2.5"/><path d="M4 17h1.5M19.5 17H21M5 17l1.5-6h9l3 6M9 11V7h4"/></svg>
+      </div>
+      <div>
+        <h3>Automotivo</h3>
+        <p class="spec">Remap ECU · Stage 1–3 · OBD / Bancada</p>
+      </div>
+      <p class="desc">Remapeamento de ECU e ajuste fino de performance, feito sob medida para o conjunto mecânico do carro.</p>
+      <ul>
+        <li>Ajuste de mapas de injeção e ignição</li>
+        <li>Ganho de potência e torque por etapa (Stage 1/2/3)</li>
+        <li>Diagnóstico e leitura de falhas via OBD2</li>
+        <li>Leitura e gravação de ECU via porta OBD ou bancada</li>
+      </ul>
+      <a class="card-cta" data-wa-msg="Olá! Quero um orçamento para remapeamento de ECU (Automotivo)." href="#">Orçar remap →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 6 3 12 8 18"/><polyline points="16 6 21 12 16 18"/></svg>
+      </div>
+      <div>
+        <h3>Software Web</h3>
+        <p class="spec">React · Node.js · PostgreSQL</p>
+      </div>
+      <p class="desc">Sistemas, sites e aplicações web que rodam no navegador, de landing pages a plataformas completas.</p>
+      <ul>
+        <li>Sites institucionais e landing pages</li>
+        <li>Sistemas internos, dashboards e painéis</li>
+        <li>Integrações com APIs, pagamentos e terceiros</li>
+        <li>E-commerce e produtos SaaS sob demanda</li>
+      </ul>
+      <a class="card-cta" data-wa-msg="Olá! Quero um orçamento para um sistema/site web." href="#">Orçar projeto web →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/></svg>
+      </div>
+      <div>
+        <h3>Software Desktop</h3>
+        <p class="spec">Electron · .NET · Qt</p>
+      </div>
+      <p class="desc">Aplicativos instalados que rodam direto no computador, para Windows, macOS ou Linux.</p>
+      <ul>
+        <li>Ferramentas internas e automações de rotina</li>
+        <li>Integração com hardware e periféricos</li>
+        <li>Sistemas de gestão que funcionam offline</li>
+        <li>Empacotamento e distribuição do instalador</li>
+      </ul>
+      <a class="card-cta" data-wa-msg="Olá! Quero um orçamento para um software desktop." href="#">Orçar software desktop →</a>
+    </div>
+
+    <div class="card">
+      <div class="card-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>
+      </div>
+      <div>
+        <h3>Aplicativo Mobile</h3>
+        <p class="spec">Flutter · React Native · Swift / Kotlin</p>
+      </div>
+      <p class="desc">Apps para Android e iOS, para clientes finais ou para a sua equipe usar em campo.</p>
+      <ul>
+        <li>Apps multiplataforma ou nativos</li>
+        <li>Notificações push e integrações nativas</li>
+        <li>Apps para equipes de campo e operação</li>
+        <li>Publicação na Play Store e App Store</li>
+      </ul>
+      <a class="card-cta" data-wa-msg="Olá! Quero um orçamento para um aplicativo mobile." href="#">Orçar aplicativo →</a>
+    </div>
+
+    <div class="card alt">
+      <div class="card-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+      </div>
+      <div>
+        <h3>Não achou seu nicho?</h3>
+        <p class="spec">Automação · Scripts · Integrações</p>
+      </div>
+      <p class="desc">Se o problema envolve lógica, dados ou automação, provavelmente a gente constrói. Conta o que precisa e a gente diz se topa.</p>
+      <a class="card-cta" data-wa-msg="Olá! Tenho um projeto fora da lista de serviços, quero conversar." href="#">Conversar sobre seu projeto →</a>
+    </div>
+
+  </div>
+</section>
+
+<section id="processo">
+  <div class="section-head wrap">
+    <p class="eyebrow">Como funciona</p>
+    <h2>Da ideia à entrega, em quatro etapas.</h2>
+  </div>
+  <div class="steps">
+    <div class="step"><span class="num mono">01</span><h3>Diagnóstico</h3><p>Você conta o que precisa — o carro, o sistema, o problema. Sem jargão obrigatório.</p></div>
+    <div class="step"><span class="num mono">02</span><h3>Orçamento</h3><p>Prazo e valor fechados antes de começar. Sem letra miúda, sem surpresa no final.</p></div>
+    <div class="step"><span class="num mono">03</span><h3>Desenvolvimento</h3><p>Acompanhamento das etapas enquanto o projeto é construído ou o carro é ajustado.</p></div>
+    <div class="step"><span class="num mono">04</span><h3>Entrega &amp; suporte</h3><p>Deploy, instalação ou entrega do carro, com suporte depois que o projeto termina.</p></div>
+  </div>
+</section>
+
+<section id="diferenciais">
+  <div class="section-head wrap">
+    <p class="eyebrow">Por que a NewsDevices</p>
+    <h2>Um fornecedor, vários nichos.</h2>
+  </div>
+  <div class="diff-grid">
+    <div class="diff">
+      <div class="diff-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <div><h3>Comunicação direta</h3><p>Você fala com quem desenvolve, sem intermediário nem telefonia de call center.</p></div>
+    </div>
+    <div class="diff">
+      <div class="diff-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M4 12l5-5M4 12l5 5"/></svg></div>
+      <div><h3>Orçamento sem compromisso</h3><p>Você entende o escopo e o valor antes de decidir se segue com o projeto.</p></div>
+    </div>
+    <div class="diff">
+      <div class="diff-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 12h6M12 9v6"/></svg></div>
+      <div><h3>Vários nichos, um ponto de contato</h3><p>Automotivo, web, desktop ou mobile — não precisa procurar um fornecedor diferente para cada frente.</p></div>
+    </div>
+    <div class="diff">
+      <div class="diff-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="4"/></svg></div>
+      <div><h3>Suporte pós-entrega</h3><p>Dúvida, ajuste fino ou bug depois da entrega tem canal direto de contato.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="contato">
+  <div class="contact-grid">
+    <div class="contact-info">
+      <p class="eyebrow">Contato</p>
+      <h2>Conta o que você precisa.</h2>
+      <p>Manda uma mensagem pelo WhatsApp ou preenche o formulário com os detalhes do projeto — nicho, prazo e o que já tem encaminhado.</p>
+      <div class="wa-line">
+        <span>+55 21 98784-0198</span>
+        <button class="copy-btn" id="copyNumber" type="button">copiar número</button>
+      </div>
+    </div>
+
+    <form class="form" id="contactForm">
+      <div class="field">
+        <label for="nome">Nome</label>
+        <input id="nome" name="nome" type="text" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="contatoCliente">Telefone ou e-mail</label>
+        <input id="contatoCliente" name="contatoCliente" type="text" required autocomplete="tel">
+      </div>
+      <div class="field">
+        <label for="nicho">Nicho do projeto</label>
+        <select id="nicho" name="nicho">
+          <option value="Automotivo (remapeamento de ECU)">Automotivo — remapeamento de ECU</option>
+          <option value="Software Web">Software — Web</option>
+          <option value="Software Desktop">Software — Desktop</option>
+          <option value="Aplicativo Mobile">Aplicativo Mobile</option>
+          <option value="Outro / não listado">Outro / não listado</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="mensagem">Conta um pouco do projeto</label>
+        <textarea id="mensagem" name="mensagem" rows="4"></textarea>
+      </div>
+      <a class="btn btn-accent btn-block" id="sendBtn" href="#">Enviar via WhatsApp</a>
+      <p class="form-note">Ao enviar, o WhatsApp abre com sua mensagem já preenchida — você confirma o envio por lá.</p>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <span class="brand" style="font-size:1rem;">NewsDevices<span class="brand-dot">.</span></span>
+    <p>© 2026 NewsDevices — desenvolvimento sob medida para qualquer nicho.</p>
+  </div>
+</footer>
+
+<a class="wa-float" id="waFloat" aria-label="Falar no WhatsApp" data-wa-msg="Olá! Vim pelo site da NewsDevices." href="#" target="_blank" rel="noopener">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.9 1-.2.2-.3.2-.6.1-.9-.4-1.8-1-2.6-1.9-.7-.7-1.2-1.5-1.5-2.1-.1-.2 0-.4.1-.5.2-.2.4-.5.6-.7.1-.2.2-.4.1-.6-.1-.2-.7-1.7-.9-2.1-.2-.4-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.7.7-1 1.5-1 2.4.1 1.1.6 2.2 1.4 3.3 1.5 2 3.3 3.5 5.5 4.3 1 .4 1.9.6 2.6.5.8-.1 1.6-.6 2-1.3.2-.3.3-.8.2-1.1-.1-.2-.5-.3-.7-.4z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2z"/></svg>
+</a>
+
+<script>
+(function(){
+  var WA_NUMBER = "5521987840198";
+  function waLink(msg){ return "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(msg); }
+
+  document.querySelectorAll('[data-wa-msg]').forEach(function(el){
+    el.setAttribute('href', waLink(el.getAttribute('data-wa-msg')));
+    if(!el.hasAttribute('target')){ el.setAttribute('target','_blank'); el.setAttribute('rel','noopener'); }
+  });
+
+  var toggle = document.getElementById('navToggle');
+  var header = document.getElementById('navHeader');
+  if(toggle){
+    toggle.addEventListener('click', function(){
+      var open = header.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.getElementById('navLinks').querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click', function(){ header.classList.remove('open'); toggle.setAttribute('aria-expanded','false'); });
+    });
+  }
+
+  var copyBtn = document.getElementById('copyNumber');
+  if(copyBtn){
+    copyBtn.addEventListener('click', function(){
+      var text = "+55 21 98784-0198";
+      function done(ok){ copyBtn.textContent = ok ? 'copiado!' : 'copie manualmente'; setTimeout(function(){ copyBtn.textContent = 'copiar número'; }, 1800); }
+      try{
+        navigator.clipboard.writeText(text).then(function(){ done(true); }).catch(function(){ done(false); });
+      }catch(e){ done(false); }
+    });
+  }
+
+  var sendBtn = document.getElementById('sendBtn');
+  var form = document.getElementById('contactForm');
+  if(sendBtn && form){
+    sendBtn.addEventListener('click', function(e){
+      e.preventDefault();
+      var nome = form.nome.value.trim();
+      var contatoCliente = form.contatoCliente.value.trim();
+      var nicho = form.nicho.value;
+      var mensagem = form.mensagem.value.trim();
+      if(!nome || !contatoCliente){
+        form.nome.focus();
+        return;
+      }
+      var text = "Olá! Me chamo " + nome + ".\nContato: " + contatoCliente + "\nNicho: " + nicho +
+        (mensagem ? ("\nProjeto: " + mensagem) : "");
+      var url = waLink(text);
+      sendBtn.setAttribute('href', url);
+      sendBtn.setAttribute('target', '_blank');
+      sendBtn.setAttribute('rel', 'noopener');
+      window.open(url, '_blank', 'noopener');
+    });
+  }
+
+  var scanItems = [
+    {n:"AUTOMOTIVO", s:"STAGE 2 · +52cv"},
+    {n:"WEB", s:"REACT · NODE.JS"},
+    {n:"DESKTOP", s:"ELECTRON · .NET"},
+    {n:"MOBILE", s:"FLUTTER · SWIFT"},
+    {n:"OUTRO", s:"AUTOMAÇÃO & SCRIPTS"}
+  ];
+  var i = 0;
+  var nicheEl = document.getElementById('scanNiche');
+  var specEl = document.getElementById('scanSpec');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(nicheEl && specEl && !reduceMotion){
+    setInterval(function(){
+      i = (i + 1) % scanItems.length;
+      nicheEl.textContent = scanItems[i].n;
+      specEl.textContent = scanItems[i].s;
+    }, 2200);
+  }
+})();
+</script>
