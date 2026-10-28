@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://poluxin21.github.io/newsdevices/sitemap.xml
